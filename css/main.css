@@ -1,0 +1,17 @@
+/* 
+    Document   : main
+    Created on : Jul 12, 2013, 8:53:36 PM
+    Author     : aura
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+html { 
+    height: 100% 
+}
+body { 
+    height: 100%; margin: 0; padding: 0 
+}
+#map-canvas { 
+    height: 100% 
+}
