@@ -1,6 +1,22 @@
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link href="css/main.css" rel="stylesheet">
+    <!--
+    Include the maps javascript with sensor=true because this code is using a
+    sensor (a GPS locator) to determine the user's location.
+    See: https://developers.google.com/apis/maps/documentation/javascript/basics#SpecifyingSensor
+    -->
+
+    
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312"/>
+<meta charset="utf-8">
+   <title>Joule Running</title>
+   <link type ="text/css" rel="stylesheet"
+         href="https://d396qusza40orc.cloudfront.net/startup%2Fcode%2Fbootstrap-2.3.2.css">
  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=true"></script>
 <script language="javascript">
    var lat1;var lng1; var lat2=[]; 
@@ -10,6 +26,13 @@
    var Vitesse=[];
    var Kcal=0;
    var Distance=0;
+   var sTime,sSpeed,sGPS;
+   var Minu=0,Hour=0,Sec=0,SSec=1; 
+
+function Roundsum(num,v){
+var vv=Math.pow(10,v);
+return Math.round(num*vv)/vv;
+}    
 function showTime()
 {
 d=new Date();
@@ -19,21 +42,20 @@ s=(d.getSeconds()<10)? "0"+d.getSeconds():d.getSeconds();
 time=h+":"+m+":"+s;
 clock.innerHTML=time;
 }
-setInterval("showTime()",1000);
- function startFunction(){
- alert("Run");
 
-}
- setInterval(" navigator.geolocation.getCurrentPosition(getposition)",1000);
- setInterval("getspeed()",1000);
+setInterval("showTime()",1000);
+
+
 
   function getposition(position){
     lat1=position.coords.latitude;
     lat2.push(lat1);
     lng1 = position.coords.longitude;
     lng2.push(lng1);
-        console.log(lat1);
-        posit.innerHTML="latitude"+"\n"+lat1 +"\n"+"longitude" +"\n"+lng1;
+   var ssspeed = position.coords.speed;
+   sspeed.innerHTML=ssspeed;
+        console.log("lat"+lat1);
+        posit.innerHTML="latitude"+"\n"+ lat1+"\n"+"longitude" +"\n"+lng1;
 
 } 
 
@@ -45,7 +67,7 @@ var dist =Ri* Math.acos(Math.sin(lat2[lat2.length-2]*Math.PI/180)*Math.sin(lat2[
  console.log(dist);
 vite=dist/1;
 Vitesse.push(vite);
- speed.innerHTML=vite;
+ speed.innerHTML=Roundsum(vite,2)+"m/s";
 if (weight==null) weight=65;
 
 Joule.push(weight*1/60/60*4.5*vite);
@@ -60,18 +82,122 @@ Kcal =Kcal+  Joule[Joule.length-1];}
 
 
 console.log("K:"+Kcal);
-Kal.innerHTML=Kcal;
-distance.innerHTML=Distance;
+Kal.innerHTML=Roundsum(Kcal,3)+"Kcal";
+var Dis;
+Dis= Distance/1000 ;
+distance.innerHTML=(Dis<0.01)?"0.00Km":Roundsum(Dis,2)+"Km";
  return vite;
  }   
+function getTime(){  
+if((SSec%100)===0){Sec+=1;SSec=1;}  ;
+if(Sec>0 && (Sec%60)===0){Minu+=1;Sec=0;}  ;
+if(Minu>0 && (Minu%60)===0){Hour+=1;Minu=0;};
+ssec=(SSec<10)?"0"+SSec:SSec;
+sec=(Sec<10)?"0"+Sec:Sec;
+minu=(Minu<10)?"0"+Minu:Minu;
+Time=Hour+":"+minu+":"+sec+":"+ssec;
+RunTime.innerHTML=Time;
+SSec+=1;
+}
+function errer(){console.log("ererer");}
 
+sGPS=setInterval("navigator.geolocation.getCurrentPosition(getposition,errer,{enableHighAccuracy:true })",1000);
+
+    function startFunction(){
+ alert("Really? GO!");
+sTime=setInterval("getTime()",10);
+
+
+ sSpeed=setInterval("getspeed()",1000);
+ }
+ 
+ function pause(){
+     clearInterval(sTime);  
+
+ clearInterval(sGPS);
+  clearInterval(sSpeed);
+ }
+function stopFunction(){
+clearInterval(sTime);
+Minu=0;Hour=0;Sec=0;SSec=0;
+ssec=(SSec<10)?"0"+SSec:SSec;
+sec=(Sec<10)?"0"+Sec:Sec;
+minu=(Minu<10)?"0"+Minu:Minu;
+Time=Hour+":"+minu+":"+sec+":"+ssec;
+RunTime.innerHTML=Time+"s";
+
+
+ clearInterval(sGPS);
+  clearInterval(sSpeed); 
+  Distance=0; 
+  Kcal=0;
+  Kal.innerHTML=Kcal;
+  distance.innerHTML=Distance;
+   speed.innerHTML="stop";
+}
+
+//window.location.href='map.html';  
+//setTimeout("window.location.href='map.html'", 15000);  
 
 </script>
 
-   <meta charset="utf-8">
-   <title>Joule Running</title>
-   <link type ="text/css" rel="stylesheet"
-         href="https://d396qusza40orc.cloudfront.net/startup%2Fcode%2Fbootstrap-2.3.2.css">
+    <script>
+        var map;
+
+function initialize() {
+ 
+
+  // Try HTML5 geolocation
+  if(navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      var pos = new google.maps.LatLng(position.coords.latitude,
+                                       position.coords.longitude);
+    var mapOptions = {
+     center: pos,
+    zoom: 18,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+
+   map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+
+      var marker = new google.maps.Marker({
+        map: map,
+        position: pos,
+        //content: 'you are here',
+   
+      });  
+
+      map.setCenter(pos);
+    }, function() {
+      handleNoGeolocation(true);
+    });
+  } else {
+    // Browser doesn't support Geolocation
+    handleNoGeolocation(false);
+  }
+}
+
+function handleNoGeolocation(errorFlag) {
+  if (errorFlag) {
+    var content = 'Error: The Geolocation service failed.';
+  } else {
+    var content = 'Error: Your browser doesn\'t support geolocation.';
+  }
+
+  var options = {
+    map: map,
+    position: new google.maps.LatLng(60, 105),
+    content: content
+  };
+
+  var infowindow = new google.maps.InfoWindow(options);
+  map.setCenter(options.position);
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+   
    <style type="text/css">
       /* Large desktop */
       @media (min-width: 980px) { 
@@ -119,19 +245,25 @@ distance.innerHTML=Distance;
          text-align: center;
           }
       .video{
-         /* Internal borders have 1px width , thus need to add 4x1px to 120px */
+         /* Internal borders have 1px width , thus need to add 4x1px to 120px shrouded-island-2151.herokuapp.com */
+          
          height: 124px;
-      line-height: 124px;
+	 line-height: 124px;	
           }
       .thermometer, .order, .social{
          /* line-height to vertically center: http://phrogz.net/css/vertical-align/index.html*/
-       height: 40px;
-       line-height:40px;
+ 	 height: 40px;
+	 line-height:40px;
           }
       div.row{
-      border:1px solid;
-        }
-      </style>
+	 border:1px solid;								
+	  }
+	</style>
+        <style type="text/css">
+#map-canvas { 
+    height: 248px 
+}
+</style>
  </head>
 
 <body>
@@ -143,50 +275,45 @@ distance.innerHTML=Distance;
 	<div class="span2 about" style=" display:inline;">Set</div>
       </div>
       <div class="row heading">
-	<div class="span12">
-	   <button onclick="startFunction()"> <h1>Joule Running</h1></button>
-	   </div>
+	<div class="span6">
+	 <button onclick="startFunction()"><h1>Joule Running</h1></button>
+	</div>
+          <div class="span6" style="display:inline;">
+	 <button onclick="pause()">Have a pause</button>
+	</div>
+           <div class="span6" style="display:inline;">
+	 <button onclick="stopFunction()">Reset</button>
+	</div>
       </div>
       <div class="row subheading">
 	<div class="span6" id="posit" style="display:inline; left:50px; top:50px; font-family:'Arial'; font-size:24px; color:#FF0000">
-	  </div>
+	  	</div>
       
       </div>
       <div class="row pitch">
 	<div class="span6 video" id="Kal" style=" left:50px; top:50px; font-family:'Arial'; font-size:48px; color:#FF0000"></div>
 	<div class="span6">
-	    <div class="thermometer"style=" display:inline;position:left;">
-	         <a class="accordion-toggle" data-toggle="collapse"
-                     data-parent="#accordion2" href="map.html">
-                    Where am I?
+	  <div class="thermometer" style=" display:inline;">
+	   <a class="accordion-toggle" data-toggle="collapse"
+              data-parent="#accordion2" href=http://user.qzone.qq.com/278140385/infocenter>
+                 
+                    more about immerliu
                   </a></div>
-	      <div class="order"style="  position:right;">Time
-		  </div>
+	  <div class="order" id="RunTime" style="  position:right;"></div>
            
-	        <div class="social" id="speed" style=" left:50px; top:50px; font-family:'Arial'; font-size:48px; color:#FF0000">
-		    </div>
+	  <div class="social" id="speed" style=" left:50px; top:50px; font-family:'Arial'; font-size:48px; color:#FF0000">
+	  </div>
              <div class="social" id="distance" style=" left:50px; top:50px; font-family:'Arial'; font-size:48px; ">
-	         </div>
-	     </div>
-      </div>
-   
-      <div class="row section1">
-	    <div class="span8">Marketing Section 1
-	      </div>
-      </div>
-      <div class="row section2">
-	<div class="span8">Marketing Section 2
 	  </div>
-      </div>
-      <div class="row faq">
-	<div class="span12">FAQ
+          <div class="social" id="sspeed" style=" left:50px; top:50px; font-family:'Arial'; font-size:48px; ">
 	  </div>
+	</div>
       </div>
-      <div class="row footer">
-	<div class="span12">Footer
-	  </div>
-          
-      </div>
+   <div class="row pitch"> 
+  <div id="map-canvas"></div>
+  </div>
+
+  
     </div>
   
 </body>
